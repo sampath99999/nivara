@@ -1,0 +1,13 @@
+{
+    "extends": "@tsconfig/node22/tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["src/*"]
+        },
+        "strict": true
+    },
+    "include": ["src/**/*", "src/helpers/catchAsync.helper.ts"]
+}

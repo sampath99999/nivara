@@ -1,0 +1,96 @@
+version: '3.9'
+
+services:
+  # Frontend Next.js service
+  frontend:
+    build:
+      context: ./frontend
+      target: ${NODE_ENV:-development}
+    container_name: nivara-frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - NEXT_PUBLIC_API_URL=http://localhost/api
+    depends_on:
+      - backend
+    networks:
+      - nivara-network
+    restart: unless-stopped
+
+  # Backend Node.js/Express service
+  backend:
+    build:
+      context: ./backend
+      target: ${NODE_ENV:-development}
+    container_name: nivara-backend
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - /app/dist
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=5000
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-nivara}
+      - APP_UI_URL=http://localhost
+    depends_on:
+      - postgres
+    networks:
+      - nivara-network
+    restart: unless-stopped
+
+  # PostgreSQL database service
+  postgres:
+    image: postgres:16-alpine
+    container_name: nivara-postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-nivara}
+    networks:
+      - nivara-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx service for routing and SSL termination
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nivara-nginx
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      # Uncomment for SSL
+      # - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+    ports:
+      - "80:80"
+      # Uncomment for SSL
+      # - "443:443"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - nivara-network
+    restart: unless-stopped
+
+networks:
+  nivara-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
+    driver: local
+

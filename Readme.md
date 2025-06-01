@@ -35,7 +35,7 @@
 | -------- | ---------------------- |
 | Backend  | Node.js (Express)      |
 | Database | PostgreSQL             |
-| Frontend | Angular                |
+| Frontend | React                  |
 | Auth     | JWT                    |
 | DevOps   | Docker, GitHub Actions |
 | ORM      | Prisma                 |
